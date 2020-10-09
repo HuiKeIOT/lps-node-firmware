@@ -119,7 +119,7 @@ static void rxcallback(dwDevice_t *dev) {
 
   if (dataLength == 0) return;
 
-  bzero(&rxPacket, MAC802154_HEADER_LENGTH);
+  bzero(&rxPacket, MAC802154_HEADER_LENGTH);//置rxPacket前MAC802154_HEADER_LENGTH个字节为零
 
   debug("RXCallback(%d): ", dataLength);
 
