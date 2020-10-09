@@ -53,9 +53,9 @@ static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
     dwSetDefaults(dev);
     dwStartReceive(dev);
 
-    if (cfgIsBinaryMode()) {
-      write(STDOUT_FILENO, "\xbc", 1);
-      write(STDOUT_FILENO, &arrival.full, 5);
+    if (cfgIsBinaryMode()) {//二进制模式
+      write(STDOUT_FILENO, "\xbc", 1);//详见main.c函数，208行
+      write(STDOUT_FILENO, &arrival.full, 5);//等同于printf函数
       write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
       write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
       dataLength -= MAC802154_HEADER_LENGTH;

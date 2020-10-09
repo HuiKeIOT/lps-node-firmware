@@ -131,13 +131,13 @@ static void rxcallback(dwDevice_t *dev) {
 
   if (dataLength == 0) return;
 
-  bzero(&rxPacket, MAC802154_HEADER_LENGTH);
+  bzero(&rxPacket, MAC802154_HEADER_LENGTH);//置0
 
   debug("RXCallback(%d): ", dataLength);
 
   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-  if (memcmp(rxPacket.destAddress, config.address, 8)) {
+  if (memcmp(rxPacket.destAddress, config.address, 8)) {//数据比较，相等即0为真进入函数
     debug("Not for me! for %02x with %02x\r\n", rxPacket.destAddress[0], rxPacket.payload[0]);
     dwNewReceive(dev);
     dwSetDefaults(dev);
@@ -150,15 +150,15 @@ static void rxcallback(dwDevice_t *dev) {
 
   switch(rxPacket.payload[TYPE]) {
     // Anchor received messages
-    case POLL:
+    case POLL://收到Tag的POLL信号
       debug("POLL from %02x at %04x\r\n", rxPacket.sourceAddress[0], (unsigned int)arival.low32);
       rangingTick = HAL_GetTick();
       ledBlink(ledRanging, true);
 
-      curr_tag = rxPacket.sourceAddress[0];
+      curr_tag = rxPacket.sourceAddress[0];//获取发送标签的地址
 
       int payloadLength = 2;
-      txPacket.payload[TYPE] = ANSWER;
+      txPacket.payload[TYPE] = ANSWER;//传递给标签的case ANSWER
       txPacket.payload[SEQ] = rxPacket.payload[SEQ];
 
       uwbConfig_t *uwbConfig = uwbGetConfig();
@@ -185,7 +185,7 @@ static void rxcallback(dwDevice_t *dev) {
       break;
     case FINAL:
     {
-      if (curr_tag == rxPacket.sourceAddress[0]) {
+      if (curr_tag == rxPacket.sourceAddress[0]) {//判断是否和发送POLL信号的为同一个标签
         reportPayload_t *report = (reportPayload_t *)(txPacket.payload+2);
 
         debug("FINAL\r\n");
@@ -194,7 +194,7 @@ static void rxcallback(dwDevice_t *dev) {
         arival.full -= (ANTENNA_DELAY/2);
         final_rx = arival;
 
-        txPacket.payload[TYPE] = REPORT;
+        txPacket.payload[TYPE] = REPORT;//传递给标签的case REPORT
         txPacket.payload[SEQ] = rxPacket.payload[SEQ];
         memcpy(&report->pollRx, &poll_rx, 5);
         memcpy(&report->answerTx, &answer_tx, 5);

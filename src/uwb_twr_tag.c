@@ -125,7 +125,7 @@ static void rxcallback(dwDevice_t *dev) {
 
   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-  if (memcmp(rxPacket.destAddress, config.address, 8)) {
+  if (memcmp(rxPacket.destAddress, config.address, 8)) {//目的地址和自身地址比较，相等(即0)则不执行
     debug("Not for me! for %02x with %02x\r\n", rxPacket.destAddress[0], rxPacket.payload[0]);
     dwNewReceive(dev);
     dwSetDefaults(dev);
@@ -138,16 +138,16 @@ static void rxcallback(dwDevice_t *dev) {
 
   switch(rxPacket.payload[TYPE]) {
     // Tag received messages
-    case ANSWER:
+    case ANSWER://基站给标签的数据
       debug("ANSWER\r\n");
 
-      if (rxPacket.payload[SEQ] != curr_seq) {
+      if (rxPacket.payload[SEQ] != curr_seq) {// sequence number不匹配
         debug("Wrong sequence number!\r\n");
-        return;
+        return;//退出
       }
 
-      txPacket.payload[0] = FINAL;
-      txPacket.payload[SEQ] = rxPacket.payload[SEQ];
+      txPacket.payload[0] = FINAL;//准备发送FINAL包
+      txPacket.payload[SEQ] = rxPacket.payload[SEQ];//谁给的answer数据给谁发final包
 
       dwNewTransmit(dev);
       dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH+2);
@@ -155,9 +155,9 @@ static void rxcallback(dwDevice_t *dev) {
       dwWaitForResponse(dev, true);
       dwStartTransmit(dev);
 
-      dwGetReceiveTimestamp(dev, &arival);
-      arival.full -= (ANTENNA_DELAY/2);
-      answer_rx = arival;
+      dwGetReceiveTimestamp(dev, &arival);//记录answer接收时间戳
+      arival.full -= (ANTENNA_DELAY/2);//减去天线延迟
+      answer_rx = arival;//R2，即answer接收时间
       break;
     case REPORT:
     {
@@ -182,26 +182,26 @@ static void rxcallback(dwDevice_t *dev) {
       printf("%02x%08x ", (unsigned int)final_tx.high8, (unsigned int)final_tx.low32);
       printf("%02x%08x\r\n", (unsigned int)final_rx.high8, (unsigned int)final_rx.low32);
 
-      tround1 = answer_rx.low32 - poll_tx.low32;
-      treply1 = answer_tx.low32 - poll_rx.low32;
-      tround2 = final_rx.low32 - answer_tx.low32;
-      treply2 = final_tx.low32 - answer_rx.low32;
+      tround1 = answer_rx.low32 - poll_tx.low32;//R2-T1，即answer接收时间-poll发送时间
+      treply1 = answer_tx.low32 - poll_rx.low32;//T2-R1，即answer发送时间-poll接收时间
+      tround2 = final_rx.low32 - answer_tx.low32;//R3-T2，即final接收时间-answer发送时间
+      treply2 = final_tx.low32 - answer_rx.low32;//T3-R2，即final发送时间-answer接收时间
 
       printf("%08x %08x\r\n", (unsigned int)tround1, (unsigned int)treply2);
       printf("\\    /   /     \\\r\n");
       printf("%08x %08x\r\n", (unsigned int)treply1, (unsigned int)tround2);
 
-      tprop_ctn = ((tround1*tround2) - (treply1*treply2)) / (tround1 + tround2 + treply1 + treply2);
+      tprop_ctn = ((tround1*tround2) - (treply1*treply2)) / (tround1 + tround2 + treply1 + treply2);//根据双向时间测距法公式计算得出“时间”
 
       printf("TProp (ctn): %d\r\n", (unsigned int)tprop_ctn);
 
       tprop = tprop_ctn/tsfreq;
-      distance = C * tprop;
+      distance = C * tprop;//标签距离基站的距离，单位m
 
       printf("distance %d: %5dmm\r\n", rxPacket.sourceAddress[0], (unsigned int)(distance*1000));
 
       dwGetReceiveTimestamp(dev, &arival);
-      arival.full -= (ANTENNA_DELAY/2);
+      arival.full -= (ANTENNA_DELAY/2);//减去天线延迟
       printf("Total in-air time (ctn): 0x%08x\r\n", (unsigned int)(arival.low32-poll_tx.low32));
 
       break;

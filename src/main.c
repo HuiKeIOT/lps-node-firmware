@@ -194,12 +194,12 @@ static void main_task(void *pvParameters) {
     // }
 
     // Accepts serial commands
-#ifdef USE_FTDI_UART
+#ifdef USE_FTDI_UART//串口接发
     if (HAL_UART_Receive(&huart1, (uint8_t*)&ch, 1, 0) == HAL_OK) {
 #else
-    if(usbcommRead(&ch, 1)) {
+    if(usbcommRead(&ch, 1)) {//USB接收
 #endif
-      handleSerialInput(ch);
+      handleSerialInput(ch);//处理接收
     }
   }
 }
@@ -266,7 +266,7 @@ static void handleMenuMain(char ch, MenuState* menuState) {
       menuState->configChanged = false;
       break;
     case 'b':
-      cfgSetBinaryMode(true);
+      cfgSetBinaryMode(true);//二进制模式
       menuState->configChanged = false;
       break;
     case '#':
